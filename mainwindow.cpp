@@ -33,6 +33,23 @@ MainWindow::MainWindow(QWidget *parent)
     blackScreen = new QWidget(this);
     blackScreen->setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     blackScreen->setStyleSheet("background-color: black;");
+
+    // 添加倒计时标签
+    countdownLabel = new QLabel(blackScreen);
+    countdownLabel->setAlignment(Qt::AlignCenter);
+    countdownLabel->setStyleSheet("font-size: 100px; color: white;");
+    countdownLabel->setGeometry(0, 0, blackScreen->width(), blackScreen->height());
+    countdownLabel->hide();
+}
+
+void MainWindow::updateCountdown()
+{
+    int remaining = blackTimer->remainingTime() / 1000;
+    int minutes = remaining / 60;
+    int seconds = remaining % 60;
+    countdownLabel->setText(QString("%1:%2")
+                           .arg(minutes, 2, 10, QLatin1Char('0'))
+                         .arg(seconds, 2, 10, QLatin1Char('0')));
 }
 
 MainWindow::~MainWindow()
@@ -61,9 +78,11 @@ void MainWindow::createTimers()
 {
     workTimer = new QTimer(this);
     blackTimer = new QTimer(this);
+    blackClockTimer = new QTimer(this);
     
     connect(workTimer, &QTimer::timeout, this, &MainWindow::onTimerTimeout);
     connect(blackTimer, &QTimer::timeout, this, &MainWindow::hideBlackScreen);
+    connect(blackClockTimer,&QTimer::timeout,this,&MainWindow::updateCountdown);
     
     DEBUG_CODE(qDebug()<<"休息开始倒计时");
     workTimer->start(workInterval);
@@ -77,21 +96,27 @@ void MainWindow::onTimerTimeout()
     workTimer->stop();
     DEBUG_CODE(qDebug()<<"黑屏开始倒计时");
     blackTimer->start(blackDuration);
+
 }
 
 void MainWindow::showBlackScreen()
 {
     blackScreen->showFullScreen();
+    countdownLabel->setGeometry(0, 0, blackScreen->width(), blackScreen->height());
+    countdownLabel->show();
+    blackClockTimer->start(1000);
 }
 
 void MainWindow::hideBlackScreen()
 {
     DEBUG_CODE(qDebug()<<"黑屏结束");
     blackScreen->hide();
+    countdownLabel->hide();
     DEBUG_CODE(qDebug()<<"休息开始倒计时");
     workTimer->start(workInterval);
     DEBUG_CODE(qDebug()<<"黑屏停止倒计时");
     blackTimer->stop();
+    blackClockTimer->stop();
 }
 
 void MainWindow::onRestoreAction()
