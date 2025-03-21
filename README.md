@@ -1,5 +1,5 @@
 ## 当前版本
-1.2.0
+1.3.0
 
 ## 功能
 ### 1.默认每30分钟黑屏3分钟
@@ -11,6 +11,12 @@
 ### 4.黑屏时显示倒计时
 ![image](https://github.com/user-attachments/assets/eeaee8c9-f7d2-48e0-8ed3-165e4c9fb4a1)
 ### 5.支持多显示屏
+### 6.软件启动提醒
+![c38b401bcd80c6e6f1e705661c99263](https://github.com/user-attachments/assets/635dc71f-96cc-4bbd-9415-e1726bca229f)
+### 7.退出黑屏快捷键
+- Esc
+- Ctrl+Q
+
 
 
 
