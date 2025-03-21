@@ -63,6 +63,14 @@ void MainWindow::createTrayIcon()
     trayIcon->setIcon(QIcon(":/res/eyes.png")); // 需要准备一个图标
     trayIcon->setContextMenu(trayMenu);
     trayIcon->show();
+
+    // 添加启动提醒
+    trayIcon->showMessage("软件已在系统托盘中运行。\nEsc或Ctrl+Q可退出黑屏。",
+                         QString("当前设置：\n工作间隔：%1分钟\n黑屏时长：%2分钟")
+                         .arg(workInterval / 60000)
+                         .arg(blackDuration / 60000),
+                         QSystemTrayIcon::Information,
+                         3000);
 }
 
 void MainWindow::createTimers()
@@ -101,6 +109,12 @@ void MainWindow::showBlackScreen()
         screenBlack->setGeometry(screen->geometry());
         screenBlack->showFullScreen();
         blackScreens.append(screenBlack);
+
+        // 添加快捷键支持
+        QShortcut* quitBlackScreenShortcut1 = new QShortcut(QKeySequence(Qt::Key_Escape), screenBlack);
+        connect(quitBlackScreenShortcut1, &QShortcut::activated, this, &MainWindow::hideBlackScreen);
+        QShortcut* quitBlackScreenShortcut2 = new QShortcut(QKeySequence("Ctrl+Q"), screenBlack);
+        connect(quitBlackScreenShortcut2, &QShortcut::activated, this, &MainWindow::hideBlackScreen);
 
         // 为每个屏幕创建倒计时标签
         QLabel* label = new QLabel(screenBlack);

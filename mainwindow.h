@@ -6,6 +6,8 @@
 #include <QTimer>
 #include <QCloseEvent>
 #include <QLabel>
+#include <QPushButton>
+#include <QShortcut>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
