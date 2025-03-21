@@ -28,18 +28,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 使得程序运行时图标不在任务栏中显示
     this->setWindowFlags(Qt::Tool);
-
-    // 初始化负责黑屏的窗口
-    blackScreen = new QWidget(this);
-    blackScreen->setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-    blackScreen->setStyleSheet("background-color: black;");
-
-    // 添加倒计时标签
-    countdownLabel = new QLabel(blackScreen);
-    countdownLabel->setAlignment(Qt::AlignCenter);
-    countdownLabel->setStyleSheet("font-size: 100px; color: white;");
-    countdownLabel->setGeometry(0, 0, blackScreen->width(), blackScreen->height());
-    countdownLabel->hide();
 }
 
 void MainWindow::updateCountdown()
@@ -47,9 +35,12 @@ void MainWindow::updateCountdown()
     int remaining = blackTimer->remainingTime() / 1000;
     int minutes = remaining / 60;
     int seconds = remaining % 60;
-    countdownLabel->setText(QString("%1:%2")
-                           .arg(minutes, 2, 10, QLatin1Char('0'))
-                         .arg(seconds, 2, 10, QLatin1Char('0')));
+    foreach (QLabel* label, countdownLabels) {
+        label->setText(QString("%1:%2")
+                       .arg(minutes, 2, 10, QLatin1Char('0'))
+                     .arg(seconds, 2, 10, QLatin1Char('0')));
+    }
+
 }
 
 MainWindow::~MainWindow()
@@ -101,17 +92,42 @@ void MainWindow::onTimerTimeout()
 
 void MainWindow::showBlackScreen()
 {
-    blackScreen->showFullScreen();
-    countdownLabel->setGeometry(0, 0, blackScreen->width(), blackScreen->height());
-    countdownLabel->show();
+    // 获取所有屏幕
+    QList<QScreen*> screens = QGuiApplication::screens();
+    foreach (QScreen* screen, screens) {
+        QWidget* screenBlack = new QWidget();
+        screenBlack->setWindowFlags(Qt::Window | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
+        screenBlack->setStyleSheet("background-color: black;");
+        screenBlack->setGeometry(screen->geometry());
+        screenBlack->showFullScreen();
+        blackScreens.append(screenBlack);
+
+        // 为每个屏幕创建倒计时标签
+        QLabel* label = new QLabel(screenBlack);
+        label->setAlignment(Qt::AlignCenter);
+        label->setStyleSheet("font-size: 100px; color: white;");
+        label->setGeometry(0, 0, screen->geometry().width(), screen->geometry().height());
+        label->show();
+        countdownLabels.append(label);
+    }
     blackClockTimer->start(1000);
 }
 
 void MainWindow::hideBlackScreen()
 {
     DEBUG_CODE(qDebug()<<"黑屏结束");
-    blackScreen->hide();
-    countdownLabel->hide();
+    // 删除所有黑屏窗口
+    foreach (QWidget* screen, blackScreens) {
+        screen->hide();
+        screen->deleteLater();
+    }
+    blackScreens.clear();
+    // 删除所有倒计时标签
+    foreach (QLabel* label, countdownLabels) {
+        label->hide();
+        label->deleteLater();
+    }
+    countdownLabels.clear();
     DEBUG_CODE(qDebug()<<"休息开始倒计时");
     workTimer->start(workInterval);
     DEBUG_CODE(qDebug()<<"黑屏停止倒计时");

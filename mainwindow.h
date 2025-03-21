@@ -38,8 +38,8 @@ private:
     QTimer *workTimer;
     QTimer *blackTimer;
     QTimer *blackClockTimer;
-    QLabel *countdownLabel;  // 添加倒计时标签
-    QWidget *blackScreen;
+    QList<QWidget*> blackScreens;  // 存储所有屏幕的黑屏窗口
+    QList<QLabel*> countdownLabels; // 存储所有屏幕的倒计时标签
     int workInterval = 30 * 60 * 1000; // 30分钟
     int blackDuration = 3 * 60 * 1000; // 3分钟
     void createTrayIcon();
