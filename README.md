@@ -1,5 +1,5 @@
 ## 当前版本
-1.1.0
+1.2.0
 
 ## 功能
 ### 1.默认每30分钟黑屏3分钟
@@ -10,7 +10,7 @@
 ![image](https://github.com/user-attachments/assets/94c11b10-3700-43f3-82b0-2293a955f0d3)
 ### 4.黑屏时显示倒计时
 ![image](https://github.com/user-attachments/assets/eeaee8c9-f7d2-48e0-8ed3-165e4c9fb4a1)
-
+### 5.支持多显示屏
 
 
 
