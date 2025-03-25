@@ -1,5 +1,5 @@
 ## 当前版本
-1.3.0
+1.4.0
 
 ## 功能
 ### 1.默认每30分钟黑屏3分钟
@@ -16,6 +16,12 @@
 ### 7.退出黑屏快捷键
 - Esc
 - Ctrl+Q
+### 8.可设置开机自启动
+![image](https://github.com/user-attachments/assets/bf99dcb6-e384-457a-b3dd-e4514b7e2c30)
+### 9.设置可以持久化存储
+![b772ccd976e93bdea12c3836b5b3c56](https://github.com/user-attachments/assets/f2d791af-8e4d-4394-9405-b164a63a4413)
+
+
 
 
 
