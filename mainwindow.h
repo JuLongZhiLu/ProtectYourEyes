@@ -49,5 +49,7 @@ private:
     void showBlackScreen();
     void hideBlackScreen();
     void updateCountdown();
+    bool isAutoStartEnabled();
+    void setAutoStart(bool enabled);
 };
 #endif // MAINWINDOW_H

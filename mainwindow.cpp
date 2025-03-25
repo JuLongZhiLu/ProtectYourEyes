@@ -9,6 +9,10 @@
 #include <QPushButton>
 #include <QMessageBox>
 #include <QDebug>
+#include <QCheckBox>
+#include <QSettings>
+#include <QDir>
+#include <QStandardPaths>
 
 
 #ifdef QT_DEBUG
@@ -22,6 +26,17 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    // 读取INI文件存储的设置
+    QString configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    QDir().mkpath(configPath);
+    QSettings settings(configPath + "/settings.ini", QSettings::IniFormat);
+    workInterval = settings.value("Settings/workInterval", 30 * 60 * 1000).toInt();
+    blackDuration = settings.value("Settings/blackDuration", 3 * 60 * 1000).toInt();
+    bool autoStart = settings.value("Settings/autoStart", false).toBool();
+    if(autoStart != isAutoStartEnabled()) {
+        setAutoStart(autoStart);
+    }
 
     createTrayIcon();
     createTimers();
@@ -172,12 +187,17 @@ void MainWindow::onSettingsAction()
     QSpinBox *durationSpinBox = new QSpinBox(settingsDialog);
     durationSpinBox->setRange(1, 10);
     durationSpinBox->setValue(blackDuration / 60000);
+
+    // 添加开机启动复选框
+    QCheckBox *startupCheckBox = new QCheckBox("开机自动启动", settingsDialog);
+    startupCheckBox->setChecked(isAutoStartEnabled());
     
     QPushButton *saveButton = new QPushButton("保存", settingsDialog);
     
     QFormLayout *formLayout = new QFormLayout();
     formLayout->addRow("工作间隔（分钟）：", intervalSpinBox);
     formLayout->addRow("黑屏时长（分钟）：", durationSpinBox);
+    formLayout->addRow(startupCheckBox);
     
     QVBoxLayout *mainLayout = new QVBoxLayout(settingsDialog);
     mainLayout->addLayout(formLayout);
@@ -186,6 +206,19 @@ void MainWindow::onSettingsAction()
     connect(saveButton, &QPushButton::clicked, [=]() {
         workInterval = intervalSpinBox->value() * 60000;
         blackDuration = durationSpinBox->value() * 60000;
+        bool autoStart = startupCheckBox->isChecked();
+
+        // 保存设置到INI文件
+        QString configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+        QDir().mkpath(configPath);
+        QSettings settings(configPath + "/settings.ini", QSettings::IniFormat);
+        settings.beginGroup("Settings");
+        settings.setValue("workInterval", workInterval);
+        settings.setValue("blackDuration", blackDuration);
+        settings.setValue("autoStart", autoStart);
+        settings.endGroup();
+
+        setAutoStart(autoStart);
         updateTimers();
         settingsDialog->accept();
     });
@@ -206,4 +239,25 @@ void MainWindow::closeEvent(QCloseEvent *event)
         hide();
         event->ignore();
     }
+}
+
+bool MainWindow::isAutoStartEnabled()
+{
+#ifdef Q_OS_WIN
+    QSettings bootUpSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+    return bootUpSettings.contains("ProtectYourEyes");
+#endif
+    return false;
+}
+
+void MainWindow::setAutoStart(bool enabled)
+{
+#ifdef Q_OS_WIN
+    QSettings bootUpSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+    if (enabled) {
+        bootUpSettings.setValue("ProtectYourEyes", QDir::toNativeSeparators(QCoreApplication::applicationFilePath()));
+    } else {
+        bootUpSettings.remove("ProtectYourEyes");
+    }
+#endif
 }
