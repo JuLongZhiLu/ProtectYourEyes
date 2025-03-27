@@ -1,3 +1,6 @@
+**其他语言版本: [English](README_EN.md), [中文](README.md).**
+
+
 ## 当前版本
 1.4.0
 
