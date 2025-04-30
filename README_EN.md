@@ -4,6 +4,10 @@
 ## Current Version
 1.5.0
 
+## Platform
+- Linux
+- Windows
+
 ## Features
 ### 1.Default 3-minute black screen every 30 minutes
 ### 2.System Tray
