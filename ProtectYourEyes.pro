@@ -10,13 +10,16 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    settingswidget.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    settingswidget.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    settingswidget.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -25,3 +28,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 RESOURCES += \
     resource.qrc
+
+TRANSLATIONS += res/language/zh_CN.ts \
+                res/language/en_US.ts

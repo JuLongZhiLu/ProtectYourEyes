@@ -11,16 +11,38 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>护眼软件</string>
+   <string/>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QPlainTextEdit" name="plainTextEdit">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+      <property name="plainText">
+       <string>Version: 1.5.0
+Time: 2025-4-30
+
+Authoer: JuLongZhiLu
+作者：巨龙之路
+
+The computer screen turns off for 3 minutes every 30 minutes. 
+每30分钟电脑黑屏3分钟。
+
+https://github.com/JuLongZhiLu/ProtectYourEyes</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
      <width>400</width>
-     <height>24</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

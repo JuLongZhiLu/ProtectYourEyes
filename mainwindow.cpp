@@ -13,29 +13,32 @@
 #include <QSettings>
 #include <QDir>
 #include <QStandardPaths>
-
-
-#ifdef QT_DEBUG
-    #define DEBUG_CODE(code) code // Debug模式下有代码
-#else
-    #define DEBUG_CODE(code)   // Release模式下替换为空
-#endif
+#include <QTranslator>
+#include <QProcess>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    setWindowTitle(tr("ProtectYourEyes"));
 
-    // 读取INI文件存储的设置
-    QString configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-    QDir().mkpath(configPath);
-    QSettings settings(configPath + "/settings.ini", QSettings::IniFormat);
-    workInterval = settings.value("Settings/workInterval", 30 * 60 * 1000).toInt();
-    blackDuration = settings.value("Settings/blackDuration", 3 * 60 * 1000).toInt();
+    QString exeDir = QCoreApplication::applicationDirPath();
+    QString iniPath = QDir::toNativeSeparators(exeDir+"/settings.ini");
+    QSettings settings(iniPath, QSettings::IniFormat);
+
+    // Read settings with fallback to default values
+    screenBlackInterval = settings.value("Settings/screenBlackInterval", 30 * 60 * 1000).toInt();
+    screenBlackDuration = settings.value("Settings/screenBlackDuration", 3 * 60 * 1000).toInt();
     bool autoStart = settings.value("Settings/autoStart", false).toBool();
-    if(autoStart != isAutoStartEnabled()) {
-        setAutoStart(autoStart);
+    setAutoStart(autoStart);
+
+    // Write default values if file doesn't exist
+    if (!QFile::exists(iniPath)) {
+        settings.setValue("Settings/screenBlackInterval", screenBlackInterval);
+        settings.setValue("Settings/screenBlackDuration", screenBlackDuration);
+        settings.setValue("Settings/autoStart", autoStart);
+        settings.sync(); // Write to file immediately
     }
 
     createTrayIcon();
@@ -43,11 +46,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 使得程序运行时图标不在任务栏中显示
     this->setWindowFlags(Qt::Tool);
+
+    settingsWidget.hide();
 }
 
 void MainWindow::updateCountdown()
 {
-    int remaining = blackTimer->remainingTime() / 1000;
+    int remaining = screenBlackDurationTimer->remainingTime() / 1000;
     int minutes = remaining / 60;
     int seconds = remaining % 60;
     foreach (QLabel* label, countdownLabels) {
@@ -66,56 +71,59 @@ MainWindow::~MainWindow()
 void MainWindow::createTrayIcon()
 {
     trayMenu = new QMenu(this);
-    QAction *restoreAction = trayMenu->addAction("显示窗口");
-    QAction *settingsAction = trayMenu->addAction("设置");
-    QAction *quitAction = trayMenu->addAction("退出");
+    QAction *restoreAction = trayMenu->addAction(tr("About"));
+    QAction *settingsAction = trayMenu->addAction(tr("Settings"));
+
+//    QMenu *languageMenu = trayMenu->addMenu("Language");
+//    QAction *chineseAction = languageMenu->addAction("中文");
+//    QAction *englishAction = languageMenu->addAction("English");
+
+    QAction *quitAction = trayMenu->addAction(tr("Exit"));
 
     connect(restoreAction, &QAction::triggered, this, &MainWindow::onRestoreAction);
     connect(settingsAction, &QAction::triggered, this, &MainWindow::onSettingsAction);
     connect(quitAction, &QAction::triggered, this, &MainWindow::onQuitAction);
+//    connect(chineseAction, &QAction::triggered, [this](){ changeLanguage("zh_CN"); });
+//    connect(englishAction, &QAction::triggered, [this](){ changeLanguage("en_US"); });
+
 
     trayIcon = new QSystemTrayIcon(this);
-    trayIcon->setIcon(QIcon(":/res/eyes.png")); // 需要准备一个图标
+    trayIcon->setIcon(QIcon(":/res/eyes.png"));
     trayIcon->setContextMenu(trayMenu);
     trayIcon->show();
 
-    // 添加启动提醒
-    trayIcon->showMessage("软件已在系统托盘中运行。\nEsc或Ctrl+Q可退出黑屏。",
-                         QString("当前设置：\n工作间隔：%1分钟\n黑屏时长：%2分钟")
-                         .arg(workInterval / 60000)
-                         .arg(blackDuration / 60000),
+    // Startup reminder
+    trayIcon->showMessage(tr("Info"),tr("running in the system tray.\nPress Esc or Ctrl+Q to exit black.\nScreen Black Interval：%1mins\nScreen Black Duration：%2mins")
+                         .arg(screenBlackInterval / 60000)
+                         .arg(screenBlackDuration / 60000),
                          QSystemTrayIcon::Information,
                          3000);
 }
 
 void MainWindow::createTimers()
 {
-    workTimer = new QTimer(this);
-    blackTimer = new QTimer(this);
+    screenBlackIntervalTimer = new QTimer(this);
+    screenBlackDurationTimer = new QTimer(this);
     blackClockTimer = new QTimer(this);
     
-    connect(workTimer, &QTimer::timeout, this, &MainWindow::onTimerTimeout);
-    connect(blackTimer, &QTimer::timeout, this, &MainWindow::hideBlackScreen);
+    connect(screenBlackIntervalTimer, &QTimer::timeout, this, &MainWindow::onTimerTimeout);
+    connect(screenBlackDurationTimer, &QTimer::timeout, this, &MainWindow::hideBlackScreen);
     connect(blackClockTimer,&QTimer::timeout,this,&MainWindow::updateCountdown);
     
-    DEBUG_CODE(qDebug()<<"休息开始倒计时");
-    workTimer->start(workInterval);
+    screenBlackIntervalTimer->start(screenBlackInterval);
 }
 
 void MainWindow::onTimerTimeout()
 {
-    DEBUG_CODE(qDebug()<<"开始黑屏");
     showBlackScreen();
-    DEBUG_CODE(qDebug()<<"休息停止倒计时");
-    workTimer->stop();
-    DEBUG_CODE(qDebug()<<"黑屏开始倒计时");
-    blackTimer->start(blackDuration);
+    screenBlackIntervalTimer->stop();
+    screenBlackDurationTimer->start(screenBlackDuration);
 
 }
 
 void MainWindow::showBlackScreen()
 {
-    // 获取所有屏幕
+    // Get all screens
     QList<QScreen*> screens = QGuiApplication::screens();
     foreach (QScreen* screen, screens) {
         QWidget* screenBlack = new QWidget();
@@ -125,13 +133,13 @@ void MainWindow::showBlackScreen()
         screenBlack->showFullScreen();
         blackScreens.append(screenBlack);
 
-        // 添加快捷键支持
+        // Add shortcut support
         QShortcut* quitBlackScreenShortcut1 = new QShortcut(QKeySequence(Qt::Key_Escape), screenBlack);
         connect(quitBlackScreenShortcut1, &QShortcut::activated, this, &MainWindow::hideBlackScreen);
         QShortcut* quitBlackScreenShortcut2 = new QShortcut(QKeySequence("Ctrl+Q"), screenBlack);
         connect(quitBlackScreenShortcut2, &QShortcut::activated, this, &MainWindow::hideBlackScreen);
 
-        // 为每个屏幕创建倒计时标签
+        // Create countdown labels for each screen
         QLabel* label = new QLabel(screenBlack);
         label->setAlignment(Qt::AlignCenter);
         label->setStyleSheet("font-size: 100px; color: white;");
@@ -144,23 +152,20 @@ void MainWindow::showBlackScreen()
 
 void MainWindow::hideBlackScreen()
 {
-    DEBUG_CODE(qDebug()<<"黑屏结束");
-    // 删除所有黑屏窗口
+    // delete all black screen
     foreach (QWidget* screen, blackScreens) {
         screen->hide();
         screen->deleteLater();
     }
     blackScreens.clear();
-    // 删除所有倒计时标签
+    // delete all countdown labels
     foreach (QLabel* label, countdownLabels) {
         label->hide();
         label->deleteLater();
     }
     countdownLabels.clear();
-    DEBUG_CODE(qDebug()<<"休息开始倒计时");
-    workTimer->start(workInterval);
-    DEBUG_CODE(qDebug()<<"黑屏停止倒计时");
-    blackTimer->stop();
+    screenBlackIntervalTimer->start(screenBlackInterval);
+    screenBlackDurationTimer->stop();
     blackClockTimer->stop();
 }
 
@@ -176,61 +181,14 @@ void MainWindow::onQuitAction()
 
 void MainWindow::onSettingsAction()
 {
-    QDialog *settingsDialog = new QDialog(nullptr);
-    settingsDialog->setWindowTitle("设置");
-    settingsDialog->setAttribute(Qt::WA_DeleteOnClose); // 关闭时自动释放内存
-    
-    QSpinBox *intervalSpinBox = new QSpinBox(settingsDialog);
-    intervalSpinBox->setRange(1, 120);
-    intervalSpinBox->setValue(workInterval / 60000);
-    
-    QSpinBox *durationSpinBox = new QSpinBox(settingsDialog);
-    durationSpinBox->setRange(1, 10);
-    durationSpinBox->setValue(blackDuration / 60000);
-
-    // 添加开机启动复选框
-    QCheckBox *startupCheckBox = new QCheckBox("开机自动启动", settingsDialog);
-    startupCheckBox->setChecked(isAutoStartEnabled());
-    
-    QPushButton *saveButton = new QPushButton("保存", settingsDialog);
-    
-    QFormLayout *formLayout = new QFormLayout();
-    formLayout->addRow("工作间隔（分钟）：", intervalSpinBox);
-    formLayout->addRow("黑屏时长（分钟）：", durationSpinBox);
-    formLayout->addRow(startupCheckBox);
-    
-    QVBoxLayout *mainLayout = new QVBoxLayout(settingsDialog);
-    mainLayout->addLayout(formLayout);
-    mainLayout->addWidget(saveButton);
-    
-    connect(saveButton, &QPushButton::clicked, [=]() {
-        workInterval = intervalSpinBox->value() * 60000;
-        blackDuration = durationSpinBox->value() * 60000;
-        bool autoStart = startupCheckBox->isChecked();
-
-        // 保存设置到INI文件
-        QString configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-        QDir().mkpath(configPath);
-        QSettings settings(configPath + "/settings.ini", QSettings::IniFormat);
-        settings.beginGroup("Settings");
-        settings.setValue("workInterval", workInterval);
-        settings.setValue("blackDuration", blackDuration);
-        settings.setValue("autoStart", autoStart);
-        settings.endGroup();
-
-        setAutoStart(autoStart);
-        updateTimers();
-        settingsDialog->accept();
-    });
-    
-    settingsDialog->open();
+    settingsWidget.show();
 }
 
 void MainWindow::updateTimers()
 {
-    workTimer->stop();
-    blackTimer->stop();
-    workTimer->start(workInterval);
+    screenBlackIntervalTimer->stop();
+    screenBlackDurationTimer->stop();
+    screenBlackIntervalTimer->start(screenBlackInterval);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
@@ -260,4 +218,61 @@ void MainWindow::setAutoStart(bool enabled)
         bootUpSettings.remove("ProtectYourEyes");
     }
 #endif
+
+#ifdef Q_OS_LINUX
+    QString autostartDir = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation) + "/autostart";
+    QDir().mkpath(autostartDir);
+    QString desktopFile = autostartDir + "/ProtectYourEyes.desktop";
+
+    if (enabled) {
+        QFile file(desktopFile);
+        if (file.open(QIODevice::WriteOnly)) {
+            QTextStream stream(&file);
+            stream << "[Desktop Entry]\n"
+                   << "Type=Application\n"
+                   << "Name=ProtectYourEyes\n"
+                   << "Exec=" << QCoreApplication::applicationFilePath() << "\n"
+                   << "Hidden=false\n"
+                   << "X-GNOME-Autostart-enabled=true\n";
+            file.close();
+        }
+    } else {
+        QFile::remove(desktopFile);
+    }
+#endif
+}
+
+
+//TODO BUG:如果是中文切中文，或者英文切英文，会导致程序崩溃
+void MainWindow::changeLanguage(const QString& language)
+{
+    // 保存语言设置
+    QString configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    QSettings settings(configPath + "/settings.ini", QSettings::IniFormat);
+    settings.setValue("Settings/language", language);
+
+    //加载对应的翻译文件
+    QTranslator translator;
+    if(translator.load(":/res/language/" + language + ".qm")) {
+        qApp->installTranslator(&translator);
+    }
+
+//    delete trayMenu;
+//    delete trayIcon;
+//    trayMenu = nullptr;
+//    trayIcon = nullptr;
+//    createTrayIcon();
+    // restart the application
+    QProcess::startDetached(QApplication::applicationFilePath());
+    QApplication::quit();
+
+
+}
+
+void MainWindow::loadLanguage()
+{
+    QString configPath = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    QSettings settings(configPath + "/settings.ini", QSettings::IniFormat);
+    QString language = settings.value("Settings/language", "zh_CN").toString();
+    changeLanguage(language);
 }

@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>res/eyes.png</file>
+        <file>res/language/en_US.qm</file>
+        <file>res/language/zh_CN.qm</file>
     </qresource>
 </RCC>
