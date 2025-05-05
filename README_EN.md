@@ -27,3 +27,7 @@
 ![image](https://github.com/user-attachments/assets/4d2ba802-97c5-4d09-bb39-e09d1b667eff)
 ### 9.Persistent settings storage
 ![image](https://github.com/user-attachments/assets/c1aba3e6-af89-4dd1-bbf7-1a9118387dd8)
+### 10.Forced mode
+Only under specific conditions can the black screen be exited early
+
+![image](https://github.com/user-attachments/assets/b81472db-40fa-4bf4-8911-21e394f34152)
