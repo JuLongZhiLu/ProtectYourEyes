@@ -33,6 +33,7 @@
 
 ### 10.强制模式
 只有满足特定条件，才能提前退出黑屏
+
 ![image](https://github.com/user-attachments/assets/b81472db-40fa-4bf4-8911-21e394f34152)
 
 
