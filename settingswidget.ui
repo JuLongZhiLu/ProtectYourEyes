@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>361</width>
-    <height>170</height>
+    <height>204</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -36,17 +36,30 @@
      <item row="1" column="1">
       <widget class="QSpinBox" name="screen_black_duration_spinBox"/>
      </item>
-     <item row="2" column="0">
+     <item row="3" column="0">
       <widget class="QCheckBox" name="auto_start_checkBox">
        <property name="text">
         <string>Auto Start</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="3" column="1">
       <widget class="QLabel" name="label_3">
        <property name="text">
         <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="forced_mode_conditions_comboBox"/>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="toolTip">
+        <string>Only under specific conditions can the black screen be exited early.</string>
+       </property>
+       <property name="text">
+        <string>Forced Mode</string>
        </property>
       </widget>
      </item>
@@ -64,7 +77,7 @@
      <item>
       <spacer name="verticalSpacer">
        <property name="orientation">
-        <enum>Qt::Vertical</enum>
+        <enum>Qt::Orientation::Vertical</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>

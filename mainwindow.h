@@ -46,8 +46,10 @@ private:
     QList<QLabel*> countdownLabels; // 存储所有屏幕的倒计时标签
     int screenBlackInterval = 30 * 60 * 1000; // 30分钟
     int screenBlackDuration = 3 * 60 * 1000; // 3分钟
+    QString forcedModeOption;
     QString currentLanguage;
     SettingsWidget settingsWidget;
+    int escPressCount = 0;
 
     void createTrayIcon();
     void createTimers();

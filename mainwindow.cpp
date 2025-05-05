@@ -32,12 +32,15 @@ MainWindow::MainWindow(QWidget *parent)
     screenBlackDuration = settings.value("Settings/screenBlackDuration", 3 * 60 * 1000).toInt();
     bool autoStart = settings.value("Settings/autoStart", false).toBool();
     setAutoStart(autoStart);
+    forcedModeOption = settings.value("Settings/forcedModeOption", "Don't use forced mode")
+                           .toString();
 
     // Write default values if file doesn't exist
     if (!QFile::exists(iniPath)) {
         settings.setValue("Settings/screenBlackInterval", screenBlackInterval);
         settings.setValue("Settings/screenBlackDuration", screenBlackDuration);
         settings.setValue("Settings/autoStart", autoStart);
+        settings.setValue("Settings/forcedModeOption", "Don't use forced mode");
         settings.sync(); // Write to file immediately
     }
 
@@ -123,6 +126,7 @@ void MainWindow::onTimerTimeout()
 
 void MainWindow::showBlackScreen()
 {
+    escPressCount = 0;
     // Get all screens
     QList<QScreen*> screens = QGuiApplication::screens();
     foreach (QScreen* screen, screens) {
@@ -133,11 +137,37 @@ void MainWindow::showBlackScreen()
         screenBlack->showFullScreen();
         blackScreens.append(screenBlack);
 
-        // Add shortcut support
-        QShortcut* quitBlackScreenShortcut1 = new QShortcut(QKeySequence(Qt::Key_Escape), screenBlack);
-        connect(quitBlackScreenShortcut1, &QShortcut::activated, this, &MainWindow::hideBlackScreen);
-        QShortcut* quitBlackScreenShortcut2 = new QShortcut(QKeySequence("Ctrl+Q"), screenBlack);
-        connect(quitBlackScreenShortcut2, &QShortcut::activated, this, &MainWindow::hideBlackScreen);
+        qDebug() << forcedModeOption;
+        if (forcedModeOption == "Don't use forced mode") {
+            // Add shortcut support
+            qDebug() << "forcedModeOption == Don't use forced mode";
+            QShortcut* quitBlackScreenShortcut1 = new QShortcut(QKeySequence(Qt::Key_Escape),
+                                                                screenBlack);
+            connect(quitBlackScreenShortcut1,
+                    &QShortcut::activated,
+                    this,
+                    &MainWindow::hideBlackScreen);
+            QShortcut* quitBlackScreenShortcut2 = new QShortcut(QKeySequence("Ctrl+Q"), screenBlack);
+            connect(quitBlackScreenShortcut2,
+                    &QShortcut::activated,
+                    this,
+                    &MainWindow::hideBlackScreen);
+        } else if (forcedModeOption == "Can't exit early") {
+            qDebug() << "forcedModeOption == Can't exit early";
+        } else if (forcedModeOption == "Must press ESC 50 times") {
+            qDebug() << "forcedModeOption == Must press ESC 50 times";
+            QShortcut* escShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), screenBlack);
+            connect(escShortcut, &QShortcut::activated, this, [this]() {
+                escPressCount++;
+                if (escPressCount >= 50) {
+                    hideBlackScreen(); // exit black screen upon 50 ESC key presses.
+                    escPressCount = 0; // reset escPressCount
+                } else {
+                    // Optional: Display remaining count (updated via QLabel).
+                    // updateCountdownLabel(50 - escPressCount);
+                }
+            });
+        }
 
         // Create countdown labels for each screen
         QLabel* label = new QLabel(screenBlack);
