@@ -2,7 +2,7 @@
 
 
 ## 当前版本
-1.5.0
+1.6.0
 
 ## 操作系统
 - Linux
@@ -30,6 +30,11 @@
 
 ### 9.设置可以持久化存储
 ![image](https://github.com/user-attachments/assets/c1aba3e6-af89-4dd1-bbf7-1a9118387dd8)
+
+### 10.强制模式
+只有满足特定条件，才能提前退出黑屏
+![image](https://github.com/user-attachments/assets/b81472db-40fa-4bf4-8911-21e394f34152)
+
 
 
 
