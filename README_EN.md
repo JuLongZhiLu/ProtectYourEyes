@@ -2,7 +2,7 @@
 
 
 ## Current Version
-1.5.0
+1.7.0
 
 ## Platform
 - Linux
@@ -31,3 +31,6 @@
 Only under specific conditions can the black screen be exited early
 
 ![image](https://github.com/user-attachments/assets/b81472db-40fa-4bf4-8911-21e394f34152)
+
+### 11.Singleton Program
+Prevent multiple instances of ProtectYourEyes
