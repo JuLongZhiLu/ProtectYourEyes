@@ -2,7 +2,7 @@
 
 
 ## 当前版本
-1.6.0
+1.7.0
 
 ## 操作系统
 - Linux
@@ -35,6 +35,9 @@
 只有满足特定条件，才能提前退出黑屏
 
 ![image](https://github.com/user-attachments/assets/b81472db-40fa-4bf4-8911-21e394f34152)
+
+### 10.单例程序
+一台电脑只能打开一个ProtectYourEyes
 
 
 
